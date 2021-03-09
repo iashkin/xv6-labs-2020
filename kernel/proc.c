@@ -13,6 +13,7 @@ struct proc proc[NPROC];
 struct proc *initproc;
 
 int nextpid = 1;
+int proc_count = 0;
 struct spinlock pid_lock;
 
 extern void forkret(void);
@@ -291,7 +292,9 @@ fork(void)
 
   safestrcpy(np->name, p->name, sizeof(p->name));
 
+  np->trace_mask = p->trace_mask;
   pid = np->pid;
+  proc_count++;
 
   np->state = RUNNABLE;
 
@@ -384,6 +387,7 @@ exit(int status)
 
   p->xstate = status;
   p->state = ZOMBIE;
+  proc_count--;
 
   release(&original_parent->lock);
 
@@ -692,4 +696,10 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+int
+proccount(void)
+{
+  return proc_count;
 }

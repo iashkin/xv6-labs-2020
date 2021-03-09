@@ -23,6 +23,8 @@ struct {
   struct run *freelist;
 } kmem;
 
+int mem_free_pages = 0;
+
 void
 kinit()
 {
@@ -59,6 +61,7 @@ kfree(void *pa)
   acquire(&kmem.lock);
   r->next = kmem.freelist;
   kmem.freelist = r;
+  mem_free_pages++;
   release(&kmem.lock);
 }
 
@@ -74,9 +77,18 @@ kalloc(void)
   r = kmem.freelist;
   if(r)
     kmem.freelist = r->next;
+  mem_free_pages--;
   release(&kmem.lock);
 
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
+}
+
+// Counting used memory.
+// Returns the amount of used memory in bytes.
+uint64
+kmeminfo(void)
+{
+  return ((uint64)mem_free_pages + 1) * PGSIZE;
 }
